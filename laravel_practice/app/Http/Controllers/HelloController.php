@@ -3,66 +3,94 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use App\Http\Requests\HelloRequest;
+use Validator;
+use Illuminate\Support\Facades\DB;
 
-global $head, $style, $body, $end;
-$head = '<html><head>';
-$style = <<<EOF
-    <style>
-        body {font-size:16pt; color:#999; }
-        h1 { font-size:100pt;text-align:right; color:#eee; 
-             margin:-40px 0px -50px 0px; }
-    </style>
-
-EOF;
-$body = '</head><body>';
-$end = '</body></html>';
-
-function tag($tag, $txt) {
-    return "<{$tag}>" . $txt . "</{$tag}>";
-}
 
 class HelloController extends Controller
 {
-    public function index(){
+    public function index(Request $request)
 
-        global $head, $style, $body, $end;
-        $html = $head . tag('taitle','Hello/Index') . $style .
-                $body . tag('h1','Index') . tag('p', 'this is Index page')
-                      . '<a href= "/hello/other">go to Other page</a>'
-                      . $end;
-      return $html;
+    { 
+        $items = DB::table('people')->orderBy('age','asc')->get();
+
+       return view('hello.index',['items'=> $items]);
+
+       
+        
+        
+    }
+    public function post(Request $request)
+    {
+       $item = DB::select('select * from peole');
+       return view('hello.index',['items'=>$items]);
+
     }
 
-    public function other(){
-        global $head, $style, $body, $end;
-        $html = $head . tag('title','Hello/other') . $style 
-        . $body
-        . tag('h1','Other') . tag('p','this is Other page')
-        . $end;
-        return $html;
-    }    
+    public function add(Request $request)
+    {
+        return view('hello.add');
+    }
 
-
-    // public function index($id='noname',$pass='unknown') {
-    //     return <<<EOF
-    //     <html>
-    //     <head>
-    //     <title>Hello/Index</title>
-    //     <style>
-    //     body {font-size:16pt; color:#999; }
-    //     h1 { font-size:100pt; text-align:right; color:#eee; margin:-40px 0px -50px 0px; }
-    //     </style>
+    public function create(Request $request)
+    {
+        $param = [
+            'name' => $request->name,
+            'mail' => $request->mail,
+            'age' => $request->age,
+        ];
+        DB::table('people')->insert($param);
+        return redirect('/hello');
+    }
+    public function edit(Request $request)
+    {
         
-    //     </head>
-    //     <body>
-    //     <h1>Index</h1>
-    //     <p>これはHelloコントローラーのindexです</p>
-    //     <ul>
-    //         <li>ID: {$id}</li>
-    //         <li>pass: {$pass}</li>
-    //     </ul>
-    //     </body>
-    //     </html>
-    //     EOF;
-    // }
+        $item = DB::table('people')
+        ->where('id',$request->id)->first();
+        return view('hello.edit',['form' => $item]);
+    }
+    
+    public function update(Request $request)
+    {
+        $param = [
+            'id' => $request->id,
+            'name' => $request->name,
+            'mail' => $request->mail,
+            'age' => $request->age,
+        ];
+        DB::table('people')
+        ->where('id',$request->id)
+        ->update($param);
+        return redirect('/hello');
+    }
+
+ public function del(Request $request)
+    {
+        $item =DB::table('people')
+            ->where('id',$request->id)->first();
+
+        return view('hello.del',['form' => $item]);
+    }
+    public function remove(Request $request)
+    {
+       
+        DB::table('people')
+        ->where('id',$request->id)->delete();
+        return redirect('/hello');
+    }
+    public function show(Request $request)
+    {
+       $page = $request->page;
+       $items = DB::table('people')
+       ->offset($page * 3)
+       ->limit(3)
+       ->get();
+
+       return view('hello.show',['items'=> $items]);
+
+
+
+    }
 }
